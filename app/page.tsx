@@ -1,4 +1,5 @@
 'use client';
+import './photos.css';
 import {useMemo,useState} from 'react';
 import {ArrowLeft,ArrowRight,CalendarDays,Check,ChevronDown,Clock3,Heart,MapPin,Menu,ShieldCheck,Sparkles,Star,Ticket,Users,X} from 'lucide-react';
 
