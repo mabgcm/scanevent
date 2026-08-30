@@ -40,7 +40,45 @@
   z-index: 1;
 }
 
-.manifesto-photo > i,
+.manifesto-photo > .manifesto-arrow,
 .manifesto-photo > small {
   z-index: 2;
+}
+
+.manifesto-arrow {
+  color: var(--acid);
+  height: 76px;
+  position: absolute;
+  stroke-width: 1.5;
+  width: 76px;
+}
+
+.category-arrow {
+  height: 28px;
+  justify-self: end;
+  stroke-width: 1.5;
+  width: 28px;
+}
+
+.footer-external {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.footer-external svg {
+  height: 13px;
+  width: 13px;
+}
+
+@media (max-width: 600px) {
+  .manifesto-arrow {
+    height: 52px;
+    width: 52px;
+  }
+
+  .category-arrow {
+    height: 24px;
+    width: 24px;
+  }
 }
