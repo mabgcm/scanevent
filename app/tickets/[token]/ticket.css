@@ -95,4 +95,20 @@
   .digital-ticket {
     box-shadow: 6px 6px 0 #d9ff3f;
   }
+  .digital-ticket header {
+    height: 60px;
+    padding-inline: 20px;
+  }
+  .digital-ticket-copy {
+    padding: 24px 20px;
+  }
+  .ticket-qr img {
+    height: auto;
+    width: min(260px, 100%);
+  }
+  .ticket-code {
+    font-size: 14px;
+    letter-spacing: 2px;
+    overflow-wrap: anywhere;
+  }
 }

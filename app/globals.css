@@ -6,3 +6,58 @@
 .preserve-lines {
   white-space: pre-line;
 }
+
+/* Narrow-screen safety net for every public view. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+img,
+svg {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .site-header { padding-inline: 16px; }
+  .site-header nav { top: 68px; max-height: calc(100svh - 68px); overflow-y: auto; }
+  .hero { padding: 48px 18px 64px; }
+  .hero h1,
+  .explore-hero h1 { font-size: clamp(42px, 14vw, 55px); letter-spacing: -3px; }
+  .hero-feature { margin-top: 48px; }
+  .event-art.large { height: min(390px, 100vw); }
+  .upcoming,
+  .categories { padding-inline: 18px; }
+  .card-info { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .category-list strong { overflow-wrap: anywhere; }
+  .quote { padding-inline: 18px; }
+  .quote > div:last-child { flex-wrap: wrap; }
+  .explore-hero { padding-inline: 18px; }
+  .filter-bar { -webkit-overflow-scrolling: touch; }
+  .filter-tabs { flex-wrap: nowrap; }
+  .filter-tabs button { flex: 0 0 auto; }
+  .list-content { padding: 20px 18px; }
+  .list-content h2 { font-size: 29px; overflow-wrap: anywhere; }
+  .list-bottom { align-items: flex-start; gap: 12px; }
+  .list-ticket-link { text-align: right; }
+  .newsletter h2 { font-size: 38px; letter-spacing: -2px; }
+  .detail-intro h1 { font-size: clamp(42px, 14vw, 54px); letter-spacing: -3px; overflow-wrap: anywhere; }
+  .ticket-panel { margin-inline: 0; padding: 24px 20px; }
+  footer { gap: 32px 20px; }
+}
+@media (max-width: 380px) {
+  .brand-logo-crop,
+  .brand-logo-crop img { width: 138px; }
+  .menu-btn { padding-inline: 4px; }
+  .feature-meta { grid-template-columns: minmax(0, 1fr) auto; }
+  .feature-meta strong { overflow-wrap: anywhere; }
+  .category-list button { grid-template-columns: 26px minmax(0, 1fr) 30px; padding-inline: 0; }
+  footer { grid-template-columns: 1fr; }
+  footer > div:first-child { grid-column: auto; }
+}
