@@ -845,7 +845,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
     if (response.ok) setResult(null);
   }
   return (
-    <section className="scanner">
+    <section className={`scanner ${result ? 'has-result' : ''}`}>
       <div className="scanner-window">
         <video ref={video} playsInline muted aria-label="Live camera preview" />
         {!running && (
@@ -860,22 +860,6 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
           {cameraError}
         </p>
       )}
-      <div className="manual-scan">
-        <label htmlFor="manual-ticket-code">
-          QR link or token
-          <input
-            id="manual-ticket-code"
-            value={manual}
-            onChange={(e) => setManual(e.target.value)}
-            placeholder="Paste the code here"
-            autoCapitalize="none"
-            autoCorrect="off"
-          />
-        </label>
-        <button type="button" onClick={() => void lookup(manual)}>
-          Check
-        </button>
-      </div>
       {result && (
         <div className={`scan-result ${result.ticket.status}`}>
           <span>
@@ -895,6 +879,22 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
           )}
         </div>
       )}
+      <div className="manual-scan">
+        <label htmlFor="manual-ticket-code">
+          QR link or token
+          <input
+            id="manual-ticket-code"
+            value={manual}
+            onChange={(e) => setManual(e.target.value)}
+            placeholder="Paste the code here"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+        </label>
+        <button type="button" onClick={() => void lookup(manual)}>
+          Check
+        </button>
+      </div>
     </section>
   );
 }

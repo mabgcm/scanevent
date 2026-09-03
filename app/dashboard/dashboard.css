@@ -591,7 +591,12 @@
   .admin-search input { min-width: 0; }
   .admin-table table { min-width: 560px; }
   .manual-scan { align-items: stretch; grid-template-columns: 1fr; }
-  .scanner-window { aspect-ratio: 3 / 4; }
+  .scanner-window { aspect-ratio: 4 / 3; max-height: 46svh; }
+  .scanner.has-result .scanner-window { max-height: 32svh; }
+  .scan-result { margin-top: 0; padding: 18px; }
+  .scan-result h2 { font-size: 25px; margin-block: 8px; }
+  .scan-result p { margin-block: 8px 14px; }
+  .scan-result button { justify-content: center; min-height: 48px; width: 100%; }
   .admin-empty { padding: 50px 20px; }
   .admin-loading { bottom: 14px; left: 14px; right: 14px; justify-content: center; }
 }
