@@ -1,5 +1,7 @@
-import { randomBytes } from 'node:crypto';
-import { adminAuth } from '@/lib/firebase-admin';
+import { createHash, randomBytes } from 'node:crypto';
+import { Timestamp } from 'firebase-admin/firestore';
+import { adminAuth, db } from '@/lib/firebase-admin';
+import { appUrl } from '@/lib/env';
 import { sendAdminSetupEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
@@ -23,7 +25,15 @@ export async function POST(request: Request) {
         password: randomBytes(36).toString('base64url'),
       });
     }
-    const link = await adminAuth.generatePasswordResetLink(requested);
+    const token = randomBytes(32).toString('base64url');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    await db.collection('adminSetupTokens').doc(tokenHash).set({
+      email: requested,
+      expiresAt: Timestamp.fromMillis(Date.now() + 30 * 60 * 1000),
+      createdAt: Timestamp.now(),
+      usedAt: null,
+    });
+    const link = `${appUrl()}/dashboard/setup?token=${encodeURIComponent(token)}`;
     await sendAdminSetupEmail(requested, link);
     return Response.json({
       ok: true,
