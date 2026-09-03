@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 import { adminAuth } from '@/lib/firebase-admin';
-import { appUrl } from '@/lib/env';
 import { sendAdminSetupEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
@@ -24,9 +23,7 @@ export async function POST(request: Request) {
         password: randomBytes(36).toString('base64url'),
       });
     }
-    const link = await adminAuth.generatePasswordResetLink(requested, {
-      url: `${appUrl()}/dashboard/login`,
-    });
+    const link = await adminAuth.generatePasswordResetLink(requested);
     await sendAdminSetupEmail(requested, link);
     return Response.json({
       ok: true,

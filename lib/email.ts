@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Resend } from 'resend';
 import { appUrl, requireEnv } from '@/lib/env';
 
@@ -65,7 +66,7 @@ export async function sendAdminSetupEmail(email: string, link: string) {
     },
     {
       headers: {
-        'Idempotency-Key': `admin-setup-${Buffer.from(email).toString('base64url')}`,
+        'Idempotency-Key': `admin-setup-${createHash('sha256').update(`${email}:${link}`).digest('hex').slice(0, 32)}`,
       },
     },
   );
