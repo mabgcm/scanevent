@@ -1,0 +1,41 @@
+.ticket-quantity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22px;
+  border-top: 1px solid #ffffff24;
+  padding-top: 18px;
+}
+.ticket-quantity label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.ticket-quantity select {
+  background: #202022;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 8px 28px 8px 10px;
+}
+.checkout-error {
+  display: block;
+  color: #ff8c7d;
+  text-align: center;
+  line-height: 1.4;
+  margin: 10px 0;
+}
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.event-card,
+.list-card {
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.list-ticket-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
