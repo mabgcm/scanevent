@@ -448,6 +448,15 @@
   height: 100%;
   object-fit: cover;
 }
+.scanner-error {
+  background: #ffd7d2;
+  border-left: 5px solid #a21b1b;
+  color: #72130e;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 14px 16px;
+}
 .scanner-window button {
   position: absolute;
   border: 0;

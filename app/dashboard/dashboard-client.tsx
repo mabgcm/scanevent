@@ -9,6 +9,7 @@ import {
 } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import type { IScannerControls } from '@zxing/browser';
 import {
   CalendarDays,
   Archive,
@@ -41,13 +42,6 @@ type EventDetail = {
   tickets: TicketRecord[];
   orders: Order[];
 };
-type BarcodeDetectorLike = {
-  detect(source: CanvasImageSource): Promise<Array<{ rawValue: string }>>;
-};
-type BarcodeDetectorConstructor = new (options: {
-  formats: string[];
-}) => BarcodeDetectorLike;
-
 const blank = {
   title: '',
   slug: '',
@@ -199,7 +193,11 @@ export default function DashboardClient({ email }: { email: string }) {
     router.refresh();
   }
   async function archiveEvent(event: EventRecord) {
-    if (!window.confirm(`Archive “${event.title}”? It will be hidden from the website.`))
+    if (
+      !window.confirm(
+        `Archive “${event.title}”? It will be hidden from the website.`,
+      )
+    )
       return;
     setBusy(true);
     const response = await fetch(`/api/admin/events/${event.id}`, {
@@ -590,11 +588,19 @@ function EventForm({
         </label>
         <label className="wide">
           Good to know
-          <textarea value={form.goodToKnow} onChange={set('goodToKnow')} rows={4} />
+          <textarea
+            value={form.goodToKnow}
+            onChange={set('goodToKnow')}
+            rows={4}
+          />
         </label>
         <label className="wide">
           Refund policy
-          <textarea value={form.refundPolicy} onChange={set('refundPolicy')} rows={3} />
+          <textarea
+            value={form.refundPolicy}
+            onChange={set('refundPolicy')}
+            rows={3}
+          />
         </label>
         <label>
           Date
@@ -698,13 +704,28 @@ function EventForm({
 
 function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
-  const timer = useRef<number | undefined>(undefined);
+  const controls = useRef<IScannerControls | null>(null);
+  const processing = useRef(false);
+  const mounted = useRef(true);
+  const lastScan = useRef<{ value: string; at: number } | null>(null);
   const [running, setRunning] = useState(false);
+  const [cameraError, setCameraError] = useState('');
   const [manual, setManual] = useState('');
   const [result, setResult] = useState<{
     ticket: TicketRecord;
     event: EventRecord;
   } | null>(null);
+  const stopCamera = useCallback(() => {
+    controls.current?.stop();
+    controls.current = null;
+    const stream = video.current?.srcObject;
+    if (stream instanceof MediaStream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    if (video.current) video.current.srcObject = null;
+    setRunning(false);
+  }, []);
+
   const lookup = useCallback(
     async (raw: string) => {
       let token = raw.trim();
@@ -723,49 +744,93 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
       const payload = await response.json();
       if (!response.ok) return onMessage(payload.error);
       setResult(payload);
-      setRunning(false);
-      if (video.current?.srcObject)
-        (video.current.srcObject as MediaStream)
-          .getTracks()
-          .forEach((track) => track.stop());
+      stopCamera();
     },
-    [onMessage],
+    [onMessage, stopCamera],
   );
+
+  function cameraErrorMessage(error: unknown) {
+    const name = error instanceof DOMException ? error.name : '';
+    if (name === 'NotAllowedError' || name === 'SecurityError')
+      return 'Camera access was denied. Allow camera access for this site in iPhone Settings or Safari website settings, then try again.';
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError')
+      return 'No camera was found on this device. You can enter the QR link or token manually below.';
+    if (name === 'NotReadableError' || name === 'TrackStartError')
+      return 'The camera is being used by another app or could not be started. Close other camera apps and try again.';
+    if (name === 'OverconstrainedError')
+      return 'The rear camera could not be selected. Check the device camera settings and try again.';
+    return 'This browser could not start QR scanning. Update iOS or use Safari, or enter the code manually below.';
+  }
+
   async function start() {
-    const Detector = (
-      window as typeof window & { BarcodeDetector?: BarcodeDetectorConstructor }
-    ).BarcodeDetector;
-    if (!Detector)
-      return onMessage(
-        'This browser does not support camera QR scanning. Enter the code manually.',
+    setCameraError('');
+    setResult(null);
+    if (!window.isSecureContext) {
+      setCameraError(
+        'Camera scanning requires a secure HTTPS connection. Open the Vercel or production HTTPS address, or enter the code manually.',
       );
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        'This browser does not provide camera access. Update iOS or use Safari, or enter the code manually below.',
+      );
+      return;
+    }
+    if (!video.current) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      if (!video.current) return;
-      video.current.srcObject = stream;
-      await video.current.play();
+      const { BrowserQRCodeReader } = await import('@zxing/browser');
       setRunning(true);
-      const detector = new Detector({ formats: ['qr_code'] });
-      const scan = async () => {
-        if (!video.current) return;
-        const codes = await detector.detect(video.current).catch(() => []);
-        if (codes[0]) return lookup(codes[0].rawValue);
-        timer.current = window.setTimeout(scan, 250);
-      };
-      void scan();
-    } catch {
-      onMessage('Could not open the camera. Check browser permissions.');
+      const reader = new BrowserQRCodeReader(undefined, {
+        delayBetweenScanAttempts: 200,
+        delayBetweenScanSuccess: 1000,
+      });
+      const scannerControls = await reader.decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
+        video.current,
+        (scanResult, _error, scannerControls) => {
+          if (!scanResult || processing.current) return;
+          const value = scanResult.getText().trim();
+          const now = Date.now();
+          if (
+            !value ||
+            (lastScan.current?.value === value &&
+              now - lastScan.current.at < 3000)
+          )
+            return;
+          lastScan.current = { value, at: now };
+          processing.current = true;
+          scannerControls.stop();
+          setRunning(false);
+          void lookup(value).finally(() => {
+            processing.current = false;
+          });
+        },
+      );
+      if (!mounted.current) {
+        scannerControls.stop();
+        return;
+      }
+      controls.current = scannerControls;
+    } catch (error) {
+      stopCamera();
+      setCameraError(cameraErrorMessage(error));
     }
   }
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current);
-      if (video.current?.srcObject)
-        (video.current.srcObject as MediaStream)
-          .getTracks()
-          .forEach((track) => track.stop());
+      mounted.current = false;
+      controls.current?.stop();
+      const stream = video.current?.srcObject;
+      if (stream instanceof MediaStream)
+        stream.getTracks().forEach((track) => track.stop());
     },
     [],
   );
@@ -782,24 +847,34 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
   return (
     <section className="scanner">
       <div className="scanner-window">
-        <video ref={video} playsInline muted />
+        <video ref={video} playsInline muted aria-label="Live camera preview" />
         {!running && (
-          <button onClick={start}>
+          <button type="button" onClick={start}>
             <Camera />
             Open camera
           </button>
         )}
       </div>
+      {cameraError && (
+        <p className="scanner-error" role="alert">
+          {cameraError}
+        </p>
+      )}
       <div className="manual-scan">
-        <label>
+        <label htmlFor="manual-ticket-code">
           QR link or token
           <input
+            id="manual-ticket-code"
             value={manual}
             onChange={(e) => setManual(e.target.value)}
             placeholder="Paste the code here"
+            autoCapitalize="none"
+            autoCorrect="off"
           />
         </label>
-        <button onClick={() => lookup(manual)}>Check</button>
+        <button type="button" onClick={() => void lookup(manual)}>
+          Check
+        </button>
       </div>
       {result && (
         <div className={`scan-result ${result.ticket.status}`}>
@@ -813,7 +888,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
             {result.event.title} · {result.ticket.shortCode}
           </p>
           {result.ticket.status === 'valid' && (
-            <button onClick={confirm}>
+            <button type="button" onClick={confirm}>
               <Check />
               Confirm check-in
             </button>
