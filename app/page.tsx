@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
-  Check,
   ChevronDown,
   Clock3,
   Heart,
@@ -38,6 +37,13 @@ type EventItem = {
   tone: string;
   symbol: string;
   description: string;
+  experienceTitle?: string;
+  experienceDescription?: string;
+  schedule?: string;
+  hostName?: string;
+  hostDescription?: string;
+  goodToKnow?: string;
+  refundPolicy?: string;
   image?: string;
   demo?: boolean;
 };
@@ -263,16 +269,20 @@ function Home({
             </span>
           </div>
         </div>
-        <button className="hero-feature" onClick={() => onSelect(events[0])}>
-          <EventArt event={events[0]} large />
-          <div className="feature-meta">
-            <span>Next up</span>
-            <strong>Fri, Sep 12 · Queen West</strong>
-            <i>
-              <ArrowRight />
-            </i>
-          </div>
-        </button>
+        {events[0] && (
+          <button className="hero-feature" onClick={() => onSelect(events[0])}>
+            <EventArt event={events[0]} large />
+            <div className="feature-meta">
+              <span>Next up</span>
+              <strong>
+                {events[0].date} · {events[0].area}
+              </strong>
+              <i>
+                <ArrowRight />
+              </i>
+            </div>
+          </button>
+        )}
         <div className="scroll-note">
           SCROLL TO DISCOVER <span>↘</span>
         </div>
@@ -589,75 +599,41 @@ function Detail({ event, onBack }: { event: EventItem; onBack: () => void }) {
       </section>
       <section className="detail-body">
         <div className="detail-main">
-          <div className="detail-section">
-            <span className="section-num">THE EXPERIENCE</span>
-            <h2>A room built for real connection.</h2>
-            <p>
-              No forced fun and no endless small talk. Your ScanEvent host
-              welcomes you, sets the tone, and gives the room just enough shape
-              for conversations to start naturally.
-            </p>
-            <div className="timeline">
-              <div>
-                <b>8:00</b>
-                <span>
-                  <strong>Doors & first drink</strong>Settle in. Your host will
-                  make introductions.
-                </span>
-              </div>
-              <div>
-                <b>8:45</b>
-                <span>
-                  <strong>The room opens up</strong>Light guided moments—never
-                  awkward games.
-                </span>
-              </div>
-              <div>
-                <b>9:30</b>
-                <span>
-                  <strong>Music up, structure down</strong>The rest of the night
-                  is yours.
-                </span>
-              </div>
+          {(event.experienceTitle || event.experienceDescription) && (
+            <div className="detail-section">
+              <span className="section-num">THE EXPERIENCE</span>
+              {event.experienceTitle && <h2>{event.experienceTitle}</h2>}
+              {event.experienceDescription && (
+                <p className="preserve-lines">{event.experienceDescription}</p>
+              )}
+              {event.schedule && (
+                <div className="timeline preserve-lines">{event.schedule}</div>
+              )}
             </div>
-          </div>
-          <div className="detail-section">
-            <span className="section-num">YOUR HOST & VENUE</span>
-            <div className="credibility">
-              <div className="host-avatar">MK</div>
-              <div>
-                <strong>Maya K. · Lead host</strong>
-                <span>48 ScanEvents hosted · 4.9 guest rating</span>
-              </div>
-              <Check />
+          )}
+          {(event.hostName || event.hostDescription) && (
+            <div className="detail-section">
+              <span className="section-num">YOUR HOST</span>
+              {event.hostName && <h2>{event.hostName}</h2>}
+              {event.hostDescription && (
+                <p className="preserve-lines">{event.hostDescription}</p>
+              )}
             </div>
-            <p>
-              Hosted at <b>{event.venue}</b>, a verified ScanEvent venue in{' '}
-              {event.area}. Accessible entrance, staffed coat check and TTC
-              access within a 6-minute walk.
-            </p>
-          </div>
-          <div className="detail-section faq">
-            <span className="section-num">GOOD TO KNOW</span>
-            {[
-              'Can I come alone?',
-              'What is your refund policy?',
-              'How do you keep events safe?',
-              'Is there a dress code?',
-            ].map((q) => (
-              <details key={q}>
-                <summary>
-                  {q}
-                  <ChevronDown />
-                </summary>
-                <p>
-                  Absolutely. Most guests arrive solo, and our hosts are
-                  specifically there to make the first few minutes feel easy and
-                  welcoming.
-                </p>
-              </details>
-            ))}
-          </div>
+          )}
+          {(event.goodToKnow || event.refundPolicy) && (
+            <div className="detail-section">
+              <span className="section-num">GOOD TO KNOW</span>
+              {event.goodToKnow && (
+                <p className="preserve-lines">{event.goodToKnow}</p>
+              )}
+              {event.refundPolicy && (
+                <>
+                  <h3>Refund policy</h3>
+                  <p className="preserve-lines">{event.refundPolicy}</p>
+                </>
+              )}
+            </div>
+          )}
         </div>
         <aside className="ticket-panel">
           <span className="status-dot">● {event.status}</span>
@@ -691,8 +667,8 @@ function Detail({ event, onBack }: { event: EventItem; onBack: () => void }) {
           <div className="ticket-safe">
             <ShieldCheck />
             <span>
-              <strong>ScanEvent Promise</strong>Clear pricing, verified hosts
-              and support before, during and after.
+              <strong>Secure checkout</strong>Your ticket and QR code are sent
+              to the email used at checkout.
             </span>
           </div>
         </aside>
@@ -806,12 +782,12 @@ function Footer() {
 export default function App() {
   const [events, setEvents] = useState<EventItem[]>(fallbackEvents);
   const [view, setView] = useState<'home' | 'explore' | 'detail'>('home');
-  const [selected, setSelected] = useState(fallbackEvents[0]);
+  const [selected, setSelected] = useState<EventItem | null>(null);
   useEffect(() => {
     fetch('/api/events')
       .then((response) => (response.ok ? response.json() : Promise.reject()))
       .then((payload) => {
-        if (!payload.events?.length) return;
+        if (!Array.isArray(payload.events)) return;
         const formatter = new Intl.DateTimeFormat('en-CA', {
           weekday: 'short',
           month: 'short',
@@ -849,6 +825,13 @@ export default function App() {
             tone: tones[index % tones.length],
             symbol: '✦',
             description: String(event.description || ''),
+            experienceTitle: String(event.experienceTitle || ''),
+            experienceDescription: String(event.experienceDescription || ''),
+            schedule: String(event.schedule || ''),
+            hostName: String(event.hostName || ''),
+            hostDescription: String(event.hostDescription || ''),
+            goodToKnow: String(event.goodToKnow || ''),
+            refundPolicy: String(event.refundPolicy || ''),
             image: event.imageUrl ? String(event.imageUrl) : undefined,
           })),
         );
@@ -874,7 +857,7 @@ export default function App() {
         />
       )}{' '}
       {view === 'explore' && <Explore onSelect={select} events={events} />}{' '}
-      {view === 'detail' && (
+      {view === 'detail' && selected && (
         <Detail event={selected} onBack={() => go('explore')} />
       )}
       <Footer />

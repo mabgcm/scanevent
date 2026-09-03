@@ -19,7 +19,7 @@ function SetupPasswordForm() {
     const password = form.get('password');
     const confirmation = form.get('confirmation');
     if (password !== confirmation) {
-      setMessage('Parolalar eşleşmiyor.');
+      setMessage('Passwords do not match.');
       setLoading(false);
       return;
     }
@@ -30,7 +30,7 @@ function SetupPasswordForm() {
     });
     const payload = await response.json();
     setDone(response.ok);
-    setMessage(response.ok ? 'Parolanız oluşturuldu.' : payload.error);
+    setMessage(response.ok ? 'Your password has been created.' : payload.error);
     setLoading(false);
   }
 
@@ -38,20 +38,20 @@ function SetupPasswordForm() {
     <main className="admin-login">
       <form onSubmit={submit}>
         <span>SCANΔDMIN</span>
-        <h1>Parolanızı oluşturun</h1>
+        <h1>Create your password</h1>
         {done ? (
           <>
             <div className="admin-success">{message}</div>
-            <Link href="/dashboard/login">Giriş ekranına dön</Link>
+            <Link href="/dashboard/login">Return to sign in</Link>
           </>
         ) : (
           <>
             <label>
-              Yeni parola
+              New password
               <input name="password" type="password" minLength={10} required />
             </label>
             <label>
-              Yeni parola tekrar
+              Confirm new password
               <input
                 name="confirmation"
                 type="password"
@@ -61,7 +61,7 @@ function SetupPasswordForm() {
             </label>
             {message && <div className="admin-error">{message}</div>}
             <button disabled={loading || !token}>
-              {loading ? 'Kaydediliyor…' : 'Parolayı kaydet'}
+              {loading ? 'Saving…' : 'Save password'}
             </button>
           </>
         )}
@@ -72,7 +72,7 @@ function SetupPasswordForm() {
 
 export default function SetupPasswordPage() {
   return (
-    <Suspense fallback={<main className="admin-login">Yükleniyor…</main>}>
+    <Suspense fallback={<main className="admin-login">Loading…</main>}>
       <SetupPasswordForm />
     </Suspense>
   );

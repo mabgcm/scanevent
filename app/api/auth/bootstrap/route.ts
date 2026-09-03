@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const allowed = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
   if (!requested || requested !== allowed)
     return Response.json(
-      { error: 'Bu adres ilk yönetici olarak tanımlı değil.' },
+      { error: 'This email is not configured as the initial administrator.' },
       { status: 403 },
     );
   try {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     await sendAdminSetupEmail(requested, link);
     return Response.json({
       ok: true,
-      message: 'Şifre oluşturma bağlantısı e-posta adresinize gönderildi.',
+      message: 'A password setup link was sent to your email address.',
     });
   } catch (error) {
     console.error(
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       error instanceof Error ? error.message : 'Unknown error',
     );
     return Response.json(
-      { error: 'Kurulum bağlantısı gönderilemedi.' },
+      { error: 'The setup link could not be sent.' },
       { status: 500 },
     );
   }

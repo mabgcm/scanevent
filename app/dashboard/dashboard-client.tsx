@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   CalendarDays,
+  Archive,
   Camera,
   Check,
   ChevronRight,
@@ -53,6 +54,13 @@ const blank = {
   category: 'Singles & Social',
   eyebrow: '',
   description: '',
+  experienceTitle: '',
+  experienceDescription: '',
+  schedule: '',
+  hostName: '',
+  hostDescription: '',
+  goodToKnow: '',
+  refundPolicy: '',
   date: '',
   startTime: '',
   endTime: '',
@@ -112,6 +120,13 @@ export default function DashboardClient({ email }: { email: string }) {
       category: event.category,
       eyebrow: event.eyebrow,
       description: event.description,
+      experienceTitle: event.experienceTitle || '',
+      experienceDescription: event.experienceDescription || '',
+      schedule: event.schedule || '',
+      hostName: event.hostName || '',
+      hostDescription: event.hostDescription || '',
+      goodToKnow: event.goodToKnow || '',
+      refundPolicy: event.refundPolicy || '',
       date: event.date,
       startTime: event.startTime,
       endTime: event.endTime,
@@ -146,11 +161,11 @@ export default function DashboardClient({ email }: { email: string }) {
     );
     const payload = await response.json();
     setBusy(false);
-    if (!response.ok) return setMessage(payload.error || 'Kaydedilemedi.');
+    if (!response.ok) return setMessage(payload.error || 'Could not save.');
     setForm(blank);
     setEditingId(null);
     setView('events');
-    setMessage('Etkinlik kaydedildi.');
+    setMessage('Event saved.');
     await loadEvents();
   }
 
@@ -174,7 +189,7 @@ export default function DashboardClient({ email }: { email: string }) {
       method: 'POST',
     });
     const payload = await response.json();
-    setMessage(response.ok ? 'Check-in tamamlandı.' : payload.error);
+    setMessage(response.ok ? 'Check-in completed.' : payload.error);
     if (response.ok && selected) await openDetail(selected.event.id);
   }
 
@@ -182,6 +197,24 @@ export default function DashboardClient({ email }: { email: string }) {
     await fetch('/api/auth/session', { method: 'DELETE' });
     router.replace('/dashboard/login');
     router.refresh();
+  }
+  async function archiveEvent(event: EventRecord) {
+    if (!window.confirm(`Archive “${event.title}”? It will be hidden from the website.`))
+      return;
+    setBusy(true);
+    const response = await fetch(`/api/admin/events/${event.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'archived' }),
+    });
+    const payload = await response.json();
+    setBusy(false);
+    setMessage(response.ok ? 'Event archived.' : payload.error);
+    if (response.ok) {
+      setSelected(null);
+      setView('events');
+      await loadEvents();
+    }
   }
   const filteredTickets =
     selected?.tickets.filter((ticket) =>
@@ -208,7 +241,7 @@ export default function DashboardClient({ email }: { email: string }) {
             onClick={() => setView('events')}
           >
             <CalendarDays />
-            Etkinlikler
+            Events
           </button>
           <button
             className={view === 'scanner' ? 'active' : ''}
@@ -222,7 +255,7 @@ export default function DashboardClient({ email }: { email: string }) {
           <small>{email}</small>
           <button onClick={logout}>
             <LogOut />
-            Çıkış
+            Log out
           </button>
         </div>
       </aside>
@@ -233,13 +266,13 @@ export default function DashboardClient({ email }: { email: string }) {
             <h1>
               {view === 'editor'
                 ? editingId
-                  ? 'Etkinliği düzenle'
-                  : 'Yeni etkinlik'
+                  ? 'Edit event'
+                  : 'New event'
                 : view === 'detail'
-                  ? 'Etkinlik detayı'
+                  ? 'Event details'
                   : view === 'scanner'
-                    ? 'Bilet kontrolü'
-                    : 'Etkinlikler'}
+                    ? 'Ticket check-in'
+                    : 'Events'}
             </h1>
           </div>
           {view === 'events' && (
@@ -252,7 +285,7 @@ export default function DashboardClient({ email }: { email: string }) {
               }}
             >
               <Plus />
-              Etkinlik oluştur
+              Create event
             </button>
           )}
         </header>
@@ -271,8 +304,8 @@ export default function DashboardClient({ email }: { email: string }) {
             {events.length === 0 ? (
               <div className="admin-empty">
                 <CalendarDays />
-                <h2>Henüz etkinlik yok</h2>
-                <p>İlk etkinliğinizi oluşturup yayınlayın.</p>
+                <h2>No events yet</h2>
+                <p>Create and publish your first event.</p>
               </div>
             ) : (
               events.map((event) => (
@@ -303,19 +336,28 @@ export default function DashboardClient({ email }: { email: string }) {
                     <strong>
                       {event.soldCount}/{event.capacity}
                     </strong>
-                    <span>satılan</span>
+                    <span>sold</span>
                   </div>
                   <button
                     className="icon-button"
                     onClick={() => editEvent(event)}
-                    aria-label="Düzenle"
+                    aria-label="Edit"
                   >
                     <Edit3 />
                   </button>
+                  {event.status !== 'archived' && (
+                    <button
+                      className="icon-button"
+                      onClick={() => archiveEvent(event)}
+                      aria-label="Archive"
+                    >
+                      <Archive />
+                    </button>
+                  )}
                   <button
                     className="icon-button"
                     onClick={() => openDetail(event.id)}
-                    aria-label="Detay"
+                    aria-label="Details"
                   >
                     <ChevronRight />
                   </button>
@@ -337,13 +379,13 @@ export default function DashboardClient({ email }: { email: string }) {
         {view === 'detail' && selected && (
           <section className="admin-detail">
             <button className="admin-back" onClick={() => setView('events')}>
-              ← Etkinliklere dön
+              ← Back to events
             </button>
             <div className="admin-metrics">
               <div>
                 <Ticket />
                 <strong>{selected.event.soldCount}</strong>
-                <span>Satılan bilet</span>
+                <span>Tickets sold</span>
               </div>
               <div>
                 <Users />
@@ -362,7 +404,7 @@ export default function DashboardClient({ email }: { email: string }) {
                     selected.event.soldCount -
                     selected.event.reservedCount}
                 </strong>
-                <span>Kalan</span>
+                <span>Remaining</span>
               </div>
             </div>
             <div className="admin-detail-head">
@@ -374,13 +416,19 @@ export default function DashboardClient({ email }: { email: string }) {
               </div>
               <button onClick={() => editEvent(selected.event)}>
                 <Edit3 />
-                Düzenle
+                Edit
               </button>
+              {selected.event.status !== 'archived' && (
+                <button onClick={() => archiveEvent(selected.event)}>
+                  <Archive />
+                  Archive
+                </button>
+              )}
             </div>
             <div className="admin-search">
               <Search />
               <input
-                placeholder="İsim, e-posta veya bilet kodu ara"
+                placeholder="Search name, email or ticket code"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -389,11 +437,11 @@ export default function DashboardClient({ email }: { email: string }) {
               <table>
                 <thead>
                   <tr>
-                    <th>Katılımcı</th>
-                    <th>Bilet</th>
-                    <th>Durum</th>
+                    <th>Attendee</th>
+                    <th>Ticket</th>
+                    <th>Status</th>
                     <th>
-                      <span className="sr-only">İşlem</span>
+                      <span className="sr-only">Action</span>
                     </th>
                   </tr>
                 </thead>
@@ -423,7 +471,7 @@ export default function DashboardClient({ email }: { email: string }) {
                 </tbody>
               </table>
               {filteredTickets.length === 0 && (
-                <p className="table-empty">Katılımcı bulunamadı.</p>
+                <p className="table-empty">No attendees found.</p>
               )}
             </div>
           </section>
@@ -432,7 +480,7 @@ export default function DashboardClient({ email }: { email: string }) {
         {busy && (
           <div className="admin-loading">
             <RefreshCw />
-            İşleniyor…
+            Processing…
           </div>
         )}
       </main>
@@ -467,19 +515,19 @@ function EventForm({
     <form className="admin-form" onSubmit={save}>
       <div className="admin-form-grid">
         <label className="wide">
-          Etkinlik adı
+          Event name
           <input value={form.title} onChange={set('title')} required />
         </label>
         <label>
-          URL adı
+          URL slug
           <input
             value={form.slug}
             onChange={set('slug')}
-            placeholder="bos-birakirsan-otomatik"
+            placeholder="generated-automatically-if-empty"
           />
         </label>
         <label>
-          Kategori
+          Category
           <select value={form.category} onChange={set('category')}>
             <option>Singles & Social</option>
             <option>Pop-ups & Experiences</option>
@@ -488,7 +536,7 @@ function EventForm({
           </select>
         </label>
         <label className="wide">
-          Üst başlık
+          Eyebrow
           <input
             value={form.eyebrow}
             onChange={set('eyebrow')}
@@ -496,15 +544,60 @@ function EventForm({
           />
         </label>
         <label className="wide">
-          Açıklama
+          Short description
           <textarea
             value={form.description}
             onChange={set('description')}
             rows={5}
           />
         </label>
+        <label className="wide">
+          Experience title
+          <input
+            value={form.experienceTitle}
+            onChange={set('experienceTitle')}
+            placeholder="What guests can expect"
+          />
+        </label>
+        <label className="wide">
+          Experience details
+          <textarea
+            value={form.experienceDescription}
+            onChange={set('experienceDescription')}
+            rows={5}
+          />
+        </label>
+        <label className="wide">
+          Schedule
+          <textarea
+            value={form.schedule}
+            onChange={set('schedule')}
+            rows={4}
+            placeholder={'8:00 PM — Doors open\n8:30 PM — Welcome'}
+          />
+        </label>
         <label>
-          Tarih
+          Host name
+          <input value={form.hostName} onChange={set('hostName')} />
+        </label>
+        <label className="wide">
+          Host details
+          <textarea
+            value={form.hostDescription}
+            onChange={set('hostDescription')}
+            rows={3}
+          />
+        </label>
+        <label className="wide">
+          Good to know
+          <textarea value={form.goodToKnow} onChange={set('goodToKnow')} rows={4} />
+        </label>
+        <label className="wide">
+          Refund policy
+          <textarea value={form.refundPolicy} onChange={set('refundPolicy')} rows={3} />
+        </label>
+        <label>
+          Date
           <input
             type="date"
             value={form.date}
@@ -513,7 +606,7 @@ function EventForm({
           />
         </label>
         <label>
-          Başlangıç
+          Start time
           <input
             type="time"
             value={form.startTime}
@@ -522,23 +615,23 @@ function EventForm({
           />
         </label>
         <label>
-          Bitiş
+          End time
           <input type="time" value={form.endTime} onChange={set('endTime')} />
         </label>
         <label>
-          Mekân
+          Venue
           <input value={form.venue} onChange={set('venue')} required />
         </label>
         <label>
-          Bölge
+          Area
           <input value={form.area} onChange={set('area')} />
         </label>
         <label className="wide">
-          Adres
+          Address
           <input value={form.address} onChange={set('address')} />
         </label>
         <label>
-          Fiyat (CAD)
+          Price (CAD)
           <input
             type="number"
             min="0"
@@ -549,7 +642,7 @@ function EventForm({
           />
         </label>
         <label>
-          Kapasite
+          Capacity
           <input
             type="number"
             min="1"
@@ -559,21 +652,22 @@ function EventForm({
           />
         </label>
         <label>
-          Durum
+          Status
           <select value={form.status} onChange={set('status')}>
-            <option value="draft">Taslak</option>
-            <option value="published">Yayında</option>
-            <option value="paused">Satış durdu</option>
-            <option value="cancelled">İptal</option>
-            <option value="completed">Tamamlandı</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="paused">Sales paused</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
           </select>
         </label>
         <label className="wide image-upload">
-          <span>Etkinlik görseli</span>
+          <span>Event image</span>
           {form.imageUrl && (
             <Image
               src={form.imageUrl}
-              alt="Yüklenen görsel"
+              alt="Uploaded event"
               width={220}
               height={120}
               unoptimized
@@ -581,7 +675,7 @@ function EventForm({
           )}
           <span className="upload-button">
             <Upload />
-            Görsel yükle
+            Upload image
             <input
               type="file"
               accept="image/*"
@@ -592,10 +686,10 @@ function EventForm({
       </div>
       <footer>
         <button type="button" onClick={cancel}>
-          Vazgeç
+          Cancel
         </button>
         <button className="admin-primary" disabled={busy}>
-          Kaydet
+          Save
         </button>
       </footer>
     </form>
@@ -643,7 +737,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
     ).BarcodeDetector;
     if (!Detector)
       return onMessage(
-        'Bu tarayıcı kamera ile QR okumayı desteklemiyor. Kodu elle girin.',
+        'This browser does not support camera QR scanning. Enter the code manually.',
       );
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -662,7 +756,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
       };
       void scan();
     } catch {
-      onMessage('Kamera açılamadı. Tarayıcı iznini kontrol edin.');
+      onMessage('Could not open the camera. Check browser permissions.');
     }
   }
   useEffect(
@@ -682,7 +776,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
       { method: 'POST' },
     );
     const payload = await response.json();
-    onMessage(response.ok ? 'Check-in tamamlandı.' : payload.error);
+    onMessage(response.ok ? 'Check-in completed.' : payload.error);
     if (response.ok) setResult(null);
   }
   return (
@@ -692,27 +786,27 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
         {!running && (
           <button onClick={start}>
             <Camera />
-            Kamerayı aç
+            Open camera
           </button>
         )}
       </div>
       <div className="manual-scan">
         <label>
-          QR bağlantısı veya token
+          QR link or token
           <input
             value={manual}
             onChange={(e) => setManual(e.target.value)}
-            placeholder="Kodu buraya yapıştırın"
+            placeholder="Paste the code here"
           />
         </label>
-        <button onClick={() => lookup(manual)}>Kontrol et</button>
+        <button onClick={() => lookup(manual)}>Check</button>
       </div>
       {result && (
         <div className={`scan-result ${result.ticket.status}`}>
           <span>
             {result.ticket.status === 'valid'
-              ? 'GEÇERLİ BİLET'
-              : 'BİLET GEÇERLİ DEĞİL'}
+              ? 'VALID TICKET'
+              : 'INVALID TICKET'}
           </span>
           <h2>{result.ticket.attendeeName}</h2>
           <p>
@@ -721,7 +815,7 @@ function Scanner({ onMessage }: { onMessage: (value: string) => void }) {
           {result.ticket.status === 'valid' && (
             <button onClick={confirm}>
               <Check />
-              Girişi onayla
+              Confirm check-in
             </button>
           )}
         </div>

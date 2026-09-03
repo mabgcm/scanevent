@@ -11,7 +11,7 @@ export async function GET(
     !snapshot.exists ||
     !['published', 'sold_out'].includes(snapshot.data()?.status)
   ) {
-    return Response.json({ error: 'Etkinlik bulunamadı.' }, { status: 404 });
+    return Response.json({ error: 'Event not found.' }, { status: 404 });
   }
   return Response.json({ event: serializeDoc(snapshot) });
 }

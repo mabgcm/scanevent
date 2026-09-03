@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const eventId = String(body.eventId || '');
     const quantity = Math.floor(Number(body.quantity || 1));
     if (!eventId || quantity < 1 || quantity > maxTicketsPerOrder()) {
-      return Response.json({ error: 'Geçersiz bilet adedi.' }, { status: 400 });
+      return Response.json({ error: 'Invalid ticket quantity.' }, { status: 400 });
     }
 
     await releaseExpiredReservations(eventId);
@@ -32,15 +32,15 @@ export async function POST(request: Request) {
     const eventData = await db.runTransaction(async (transaction) => {
       const eventRef = db.collection('events').doc(eventId);
       const event = await transaction.get(eventRef);
-      if (!event.exists) throw new Error('Etkinlik bulunamadı.');
+      if (!event.exists) throw new Error('Event not found.');
       const data = event.data()!;
       if (data.status !== 'published')
-        throw new Error('Bu etkinlik satışta değil.');
+        throw new Error('This event is not on sale.');
       const sold = Number(data.soldCount || 0);
       const reserved = Number(data.reservedCount || 0);
       const capacity = Number(data.capacity || 0);
       if (sold + reserved + quantity > capacity)
-        throw new Error('Yeterli bilet kalmadı.');
+        throw new Error('Not enough tickets are available.');
       transaction.update(eventRef, {
         reservedCount: reserved + quantity,
         updatedAt: FieldValue.serverTimestamp(),
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       );
     return Response.json(
       {
-        error: error instanceof Error ? error.message : 'Ödeme başlatılamadı.',
+        error: error instanceof Error ? error.message : 'Checkout could not be started.',
       },
       { status: 400 },
     );

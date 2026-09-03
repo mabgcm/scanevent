@@ -21,7 +21,8 @@ async function fulfill(
 ) {
   const reservationId = session.metadata?.reservationId;
   const eventId = session.metadata?.eventId;
-  if (!reservationId || !eventId) throw new Error('Checkout metadata eksik.');
+  if (!reservationId || !eventId)
+    throw new Error('Checkout metadata is missing.');
   const quantity = Math.max(1, Number(session.metadata?.quantity || 1));
   const tokens = Array.from({ length: quantity }, () => ({
     token: newTicketToken(),
@@ -45,14 +46,14 @@ async function fulfill(
       !event.exists ||
       reservation.data()?.status !== 'pending'
     )
-      throw new Error('Aktif rezervasyon bulunamadı.');
+      throw new Error('Active reservation not found.');
     const eventData = event.data()!;
     const email = session.customer_details?.email || session.customer_email;
     const customName = session.custom_fields?.find(
       (field) => field.key === 'buyer_name',
     )?.text?.value;
-    const name = customName || session.customer_details?.name || 'Misafir';
-    if (!email) throw new Error('Müşteri e-postası eksik.');
+    const name = customName || session.customer_details?.name || 'Guest';
+    if (!email) throw new Error('Customer email is missing.');
 
     transaction.update(reservationRef, {
       status: 'completed',
@@ -196,7 +197,7 @@ async function markRefunded(charge: Stripe.Charge, stripeEventId: string) {
 export async function POST(request: Request) {
   const signature = request.headers.get('stripe-signature');
   if (!signature)
-    return Response.json({ error: 'İmza eksik.' }, { status: 400 });
+    return Response.json({ error: 'Signature is missing.' }, { status: 400 });
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(
@@ -205,7 +206,7 @@ export async function POST(request: Request) {
       requireEnv('STRIPE_WEBHOOK_SECRET'),
     );
   } catch {
-    return Response.json({ error: 'Geçersiz imza.' }, { status: 400 });
+    return Response.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
   try {
@@ -231,6 +232,9 @@ export async function POST(request: Request) {
       'Stripe webhook processing failed',
       error instanceof Error ? error.message : 'Unknown error',
     );
-    return Response.json({ error: 'Webhook işlenemedi.' }, { status: 500 });
+    return Response.json(
+      { error: 'Webhook could not be processed.' },
+      { status: 500 },
+    );
   }
 }

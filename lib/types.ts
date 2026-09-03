@@ -4,7 +4,8 @@ export type EventStatus =
   | 'paused'
   | 'sold_out'
   | 'cancelled'
-  | 'completed';
+  | 'completed'
+  | 'archived';
 
 export type EventRecord = {
   id: string;
@@ -13,6 +14,13 @@ export type EventRecord = {
   category: string;
   eyebrow: string;
   description: string;
+  experienceTitle: string;
+  experienceDescription: string;
+  schedule: string;
+  hostName: string;
+  hostDescription: string;
+  goodToKnow: string;
+  refundPolicy: string;
   date: string;
   startTime: string;
   endTime: string;

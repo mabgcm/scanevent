@@ -5,10 +5,10 @@ import { adminAuth, db } from '@/lib/firebase-admin';
 export async function POST(request: Request) {
   const { token, password } = await request.json().catch(() => ({}));
   if (typeof token !== 'string' || typeof password !== 'string')
-    return Response.json({ error: 'Geçersiz istek.' }, { status: 400 });
+    return Response.json({ error: 'Invalid request.' }, { status: 400 });
   if (password.length < 10)
     return Response.json(
-      { error: 'Parola en az 10 karakter olmalı.' },
+      { error: 'Password must be at least 10 characters.' },
       { status: 400 },
     );
 
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error: invalid
-          ? 'Bu bağlantı geçersiz, kullanılmış veya süresi dolmuş.'
-          : 'Parola oluşturulamadı.',
+          ? 'This link is invalid, has already been used, or has expired.'
+          : 'Password could not be created.',
       },
       { status: invalid ? 400 : 500 },
     );

@@ -16,14 +16,14 @@ export async function GET(
       db.collection('orders').where('eventId', '==', id).get(),
     ]);
     if (!event.exists)
-      return Response.json({ error: 'Etkinlik bulunamadı.' }, { status: 404 });
+      return Response.json({ error: 'Event not found.' }, { status: 404 });
     return Response.json({
       event: serializeDoc(event),
       tickets: tickets.docs.map(serializeDoc),
       orders: orders.docs.map(serializeDoc),
     });
   } catch {
-    return Response.json({ error: 'Yetkisiz.' }, { status: 401 });
+    return Response.json({ error: 'Unauthorized.' }, { status: 401 });
   }
 }
 
@@ -38,14 +38,14 @@ export async function PATCH(
     const ref = db.collection('events').doc(id);
     const current = await ref.get();
     if (!current.exists)
-      return Response.json({ error: 'Etkinlik bulunamadı.' }, { status: 404 });
+      return Response.json({ error: 'Event not found.' }, { status: 404 });
     const sold = Number(current.data()?.soldCount || 0);
     const capacity = Math.floor(
       Number(input.capacity ?? current.data()?.capacity),
     );
     if (capacity < sold)
       return Response.json(
-        { error: 'Kapasite satılmış bilet sayısından düşük olamaz.' },
+        { error: 'Capacity cannot be lower than the number of sold tickets.' },
         { status: 400 },
       );
     const allowed = [
@@ -54,6 +54,13 @@ export async function PATCH(
       'category',
       'eyebrow',
       'description',
+      'experienceTitle',
+      'experienceDescription',
+      'schedule',
+      'hostName',
+      'hostDescription',
+      'goodToKnow',
+      'refundPolicy',
       'date',
       'startTime',
       'endTime',
@@ -76,8 +83,8 @@ export async function PATCH(
       {
         error:
           error instanceof Error && error.message === 'UNAUTHORIZED'
-            ? 'Yetkisiz.'
-            : 'Güncelleme başarısız.',
+            ? 'Unauthorized.'
+            : 'Update failed.',
       },
       { status: 401 },
     );

@@ -8,10 +8,10 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const image = form.get('image');
     if (!(image instanceof File))
-      return Response.json({ error: 'Görsel eksik.' }, { status: 400 });
+      return Response.json({ error: 'Image is required.' }, { status: 400 });
     if (!image.type.startsWith('image/') || image.size > 5 * 1024 * 1024) {
       return Response.json(
-        { error: 'En fazla 5 MB boyutunda bir görsel yükleyin.' },
+        { error: 'Upload an image no larger than 5 MB.' },
         { status: 400 },
       );
     }
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const unauthorized =
       error instanceof Error && error.message === 'UNAUTHORIZED';
     return Response.json(
-      { error: unauthorized ? 'Yetkisiz.' : 'Görsel yüklenemedi.' },
+      { error: unauthorized ? 'Unauthorized.' : 'Image upload failed.' },
       { status: unauthorized ? 401 : 500 },
     );
   }

@@ -5,7 +5,7 @@ import { SESSION_COOKIE, SESSION_MAX_AGE_MS } from '@/lib/auth';
 export async function POST(request: Request) {
   const { idToken } = await request.json().catch(() => ({}));
   if (typeof idToken !== 'string')
-    return Response.json({ error: 'Oturum bilgisi eksik.' }, { status: 400 });
+    return Response.json({ error: 'Session credentials are missing.' }, { status: 400 });
 
   try {
     const decoded = await adminAuth.verifyIdToken(idToken);
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       decoded.email?.toLowerCase() !== initialAdmin
     ) {
       return Response.json(
-        { error: 'Bu hesabın yönetici yetkisi yok.' },
+        { error: 'This account does not have admin access.' },
         { status: 403 },
       );
     }
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     });
     return Response.json({ ok: true });
   } catch {
-    return Response.json({ error: 'Geçersiz oturum.' }, { status: 401 });
+    return Response.json({ error: 'Invalid session.' }, { status: 401 });
   }
 }
 

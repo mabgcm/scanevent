@@ -22,7 +22,7 @@ export default function DashboardLogin() {
       const formEmail = form.get('email');
       const formPassword = form.get('password');
       if (typeof formEmail !== 'string' || typeof formPassword !== 'string')
-        throw new Error('E-posta veya parola eksik.');
+        throw new Error('Email or password is missing.');
       const credential = await signInWithEmailAndPassword(
         firebaseAuth,
         formEmail,
@@ -38,7 +38,7 @@ export default function DashboardLogin() {
       router.replace('/dashboard');
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Giriş yapılamadı.');
+      setError(caught instanceof Error ? caught.message : 'Could not sign in.');
     } finally {
       setLoading(false);
     }
@@ -53,10 +53,10 @@ export default function DashboardLogin() {
           height={58}
         />
         <span>SCANΔDMIN</span>
-        <h1>Yönetim paneli</h1>
-        <p>Etkinlik ve bilet operasyonları için giriş yapın.</p>
+        <h1>Admin dashboard</h1>
+        <p>Sign in to manage events and ticket operations.</p>
         <label>
-          E-posta
+          Email
           <input
             name="email"
             type="email"
@@ -67,7 +67,7 @@ export default function DashboardLogin() {
           />
         </label>
         <label>
-          Parola
+          Password
           <input
             name="password"
             type="password"
@@ -77,7 +77,7 @@ export default function DashboardLogin() {
         </label>
         {error && <div className="admin-error">{error}</div>}
         <button disabled={loading}>
-          {loading ? 'Giriş yapılıyor…' : 'Giriş yap'}
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
         <button
           type="button"
@@ -96,7 +96,7 @@ export default function DashboardLogin() {
             setLoading(false);
           }}
         >
-          İlk giriş için şifre oluştur
+          Create password for first sign-in
         </button>
       </form>
     </main>

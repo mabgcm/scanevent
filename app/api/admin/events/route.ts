@@ -10,6 +10,7 @@ const allowedStatuses = new Set([
   'sold_out',
   'cancelled',
   'completed',
+  'archived',
 ]);
 
 function text(input: unknown, fallback = '') {
@@ -37,9 +38,9 @@ function normalize(input: Record<string, unknown>) {
     !input.venue ||
     !capacity
   )
-    throw new Error('Eksik zorunlu alan.');
+    throw new Error('Required fields are missing.');
   if (!allowedStatuses.has(status))
-    throw new Error('Geçersiz etkinlik durumu.');
+    throw new Error('Invalid event status.');
 
   return {
     title,
@@ -50,6 +51,13 @@ function normalize(input: Record<string, unknown>) {
     category: text(input.category, 'Social'),
     eyebrow: text(input.eyebrow),
     description: text(input.description),
+    experienceTitle: text(input.experienceTitle),
+    experienceDescription: text(input.experienceDescription),
+    schedule: text(input.schedule),
+    hostName: text(input.hostName),
+    hostDescription: text(input.hostDescription),
+    goodToKnow: text(input.goodToKnow),
+    refundPolicy: text(input.refundPolicy),
     date: text(input.date),
     startTime: text(input.startTime),
     endTime: text(input.endTime),
@@ -77,8 +85,8 @@ export async function GET() {
       {
         error:
           error instanceof Error && error.message === 'UNAUTHORIZED'
-            ? 'Yetkisiz.'
-            : 'Etkinlikler alınamadı.',
+            ? 'Unauthorized.'
+            : 'Events could not be loaded.',
       },
       { status: 401 },
     );
@@ -96,7 +104,7 @@ export async function POST(request: Request) {
       .get();
     if (!duplicate.empty)
       return Response.json(
-        { error: 'Bu URL adı zaten kullanılıyor.' },
+        { error: 'This URL slug is already in use.' },
         { status: 409 },
       );
     const ref = db.collection('events').doc();
@@ -111,9 +119,9 @@ export async function POST(request: Request) {
     return Response.json({ id: ref.id }, { status: 201 });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : 'Etkinlik oluşturulamadı.';
+      error instanceof Error ? error.message : 'Event could not be created.';
     return Response.json(
-      { error: message === 'UNAUTHORIZED' ? 'Yetkisiz.' : message },
+      { error: message === 'UNAUTHORIZED' ? 'Unauthorized.' : message },
       { status: message === 'UNAUTHORIZED' ? 401 : 400 },
     );
   }

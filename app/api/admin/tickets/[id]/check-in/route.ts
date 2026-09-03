@@ -13,12 +13,12 @@ export async function POST(
     const result = await db.runTransaction(async (transaction) => {
       const ref = db.collection('tickets').doc(id);
       const snapshot = await transaction.get(ref);
-      if (!snapshot.exists) throw new Error('Bilet bulunamadı.');
+      if (!snapshot.exists) throw new Error('Ticket not found.');
       if (snapshot.data()?.status !== 'valid')
         throw new Error(
           snapshot.data()?.status === 'checked_in'
-            ? 'Bu bilet daha önce kullanılmış.'
-            : 'Bu bilet geçerli değil.',
+            ? 'This ticket has already been used.'
+            : 'This ticket is not valid.',
         );
       transaction.update(ref, {
         status: 'checked_in',
@@ -31,9 +31,9 @@ export async function POST(
     return Response.json({ ticket: { ...result, status: 'checked_in' } });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : 'Check-in başarısız.';
+      error instanceof Error ? error.message : 'Check-in failed.';
     return Response.json(
-      { error: message === 'UNAUTHORIZED' ? 'Yetkisiz.' : message },
+      { error: message === 'UNAUTHORIZED' ? 'Unauthorized.' : message },
       { status: message === 'UNAUTHORIZED' ? 401 : 400 },
     );
   }

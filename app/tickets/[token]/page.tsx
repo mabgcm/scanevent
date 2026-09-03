@@ -55,14 +55,14 @@ export default async function TicketPage({
           <div className="ticket-qr">
             <Image
               src={`/api/tickets/${encodeURIComponent(token)}/qr`}
-              alt="Bilet QR kodu"
+              alt="Ticket QR code"
               width={260}
               height={260}
               unoptimized
             />
           </div>
           <strong className="ticket-code">{String(ticket.shortCode)}</strong>
-          <small>Bu QR kodu yalnızca bir giriş için geçerlidir.</small>
+          <small>This QR code is valid for one admission only.</small>
         </div>
       </section>
     </main>
