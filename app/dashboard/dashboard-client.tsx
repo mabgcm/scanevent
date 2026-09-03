@@ -1,6 +1,12 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  SyntheticEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
@@ -120,7 +126,7 @@ export default function DashboardClient({ email }: { email: string }) {
     setView('editor');
   }
 
-  async function saveEvent(event: FormEvent<HTMLFormElement>) {
+  async function saveEvent(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setMessage('');
@@ -444,7 +450,7 @@ function EventForm({
 }: {
   form: typeof blank;
   setForm: React.Dispatch<React.SetStateAction<typeof blank>>;
-  save: (e: FormEvent<HTMLFormElement>) => void;
+  save: (e: SyntheticEvent<HTMLFormElement>) => void;
   upload: (f?: File) => void;
   busy: boolean;
   cancel: () => void;
