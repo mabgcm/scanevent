@@ -1,3 +1,4 @@
+import { currentSite, isEventSite } from '@/lib/event-site';
 import { FieldValue } from 'firebase-admin/firestore';
 import { requireAdmin } from '@/lib/auth';
 import { db } from '@/lib/firebase-admin';
@@ -20,6 +21,8 @@ function text(input: unknown, fallback = '') {
 }
 
 function normalize(input: Record<string, unknown>) {
+  const site = input.site ?? currentSite;
+  if (!isEventSite(site)) throw new Error('Invalid event site.');
   const title = text(input.title);
   const slug = text(input.slug, title)
     .toLowerCase()
@@ -39,10 +42,10 @@ function normalize(input: Record<string, unknown>) {
     !capacity
   )
     throw new Error('Required fields are missing.');
-  if (!allowedStatuses.has(status))
-    throw new Error('Invalid event status.');
+  if (!allowedStatuses.has(status)) throw new Error('Invalid event status.');
 
   return {
+    site,
     title,
     slug,
     capacity,
