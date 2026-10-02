@@ -47,83 +47,7 @@ type EventItem = {
   image?: string;
   demo?: boolean;
 };
-const fallbackEvents: EventItem[] = [
-  {
-    id: 'after-dark-social',
-    category: 'Singles & Social',
-    eyebrow: 'SIGNATURE NIGHT · 25–38',
-    title: 'After Dark\nSocial',
-    date: 'Fri, Sep 12',
-    time: '8:00 PM – late',
-    venue: 'Soluna',
-    area: 'Queen West',
-    price: '$34',
-    status: 'Selling fast',
-    spots: 18,
-    tone: 'acid',
-    symbol: '✦',
-    description:
-      'A no-pressure night for good people, great music and real-world chemistry—hosted with intention in one of Toronto’s best rooms.',
-    image: '/images/scanevent-social-night.png',
-    demo: true,
-  },
-  {
-    id: 'patio-people',
-    category: 'Singles & Social',
-    eyebrow: 'SUNSET MIXER · 28–42',
-    title: 'Patio People',
-    date: 'Thu, Sep 18',
-    time: '7:00 PM – 10:30 PM',
-    venue: 'The Broadview Hotel',
-    area: 'Riverside',
-    price: '$28',
-    status: 'Just added',
-    spots: 32,
-    tone: 'coral',
-    symbol: '☼',
-    description:
-      'Golden hour, a skyline view and just enough structure to make meeting someone new feel easy.',
-    demo: true,
-  },
-  {
-    id: 'supper-club-vol-03',
-    category: 'Pop-ups & Experiences',
-    eyebrow: 'COMMUNAL DINNER · 30+',
-    title: 'Supper Club\nVol. 03',
-    date: 'Sat, Sep 27',
-    time: '7:30 PM – 11:00 PM',
-    venue: 'Secret location',
-    area: 'West End',
-    price: '$78',
-    status: 'Waitlist open',
-    spots: 0,
-    tone: 'violet',
-    symbol: '03',
-    description:
-      'A shared-table dinner for curious Torontonians, with an unreleased menu and thoughtfully mixed seating.',
-    image: '/images/scanevent-supper-club.png',
-    demo: true,
-  },
-  {
-    id: 'creative-collision',
-    category: 'Corporate & Community',
-    eyebrow: 'COMMUNITY NIGHT · ALL WELCOME',
-    title: 'Creative\nCollision',
-    date: 'Wed, Oct 01',
-    time: '6:30 PM – 9:30 PM',
-    venue: 'Waterworks',
-    area: 'King West',
-    price: '$22',
-    status: 'New',
-    spots: 46,
-    tone: 'blue',
-    symbol: 'CC',
-    description:
-      'Designers, founders, musicians and makers meet through playful prompts—not another stack of business cards.',
-    image: '/images/scanevent-social-night.png',
-    demo: true,
-  },
-];
+
 const categories = [
   'All events',
   'Singles & Social',
@@ -780,7 +704,8 @@ function Footer() {
   );
 }
 export default function App() {
-  const [events, setEvents] = useState<EventItem[]>(fallbackEvents);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [eventsError, setEventsError] = useState('');
   const [view, setView] = useState<'home' | 'explore' | 'detail'>('home');
   const [selected, setSelected] = useState<EventItem | null>(null);
   useEffect(() => {
@@ -836,7 +761,9 @@ export default function App() {
           })),
         );
       })
-      .catch(() => undefined);
+      .catch(() =>
+        setEventsError('Events could not be loaded. Please refresh the page.'),
+      );
   }, []);
   const go = (v: 'home' | 'explore' | 'detail') => {
     setView(v);
@@ -848,6 +775,7 @@ export default function App() {
   };
   return (
     <div className="app-shell">
+      {eventsError && <p role="alert">{eventsError}</p>}
       <Header onHome={() => go('home')} onExplore={() => go('explore')} />
       {view === 'home' && (
         <Home

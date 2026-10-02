@@ -1,3 +1,4 @@
+import { isEventSite } from '@/lib/event-site';
 import { FieldValue } from 'firebase-admin/firestore';
 import { requireAdmin } from '@/lib/auth';
 import { db } from '@/lib/firebase-admin';
@@ -35,6 +36,8 @@ export async function PATCH(
     await requireAdmin();
     const { id } = await params;
     const input = await request.json();
+    if ('site' in input && !isEventSite(input.site))
+      return Response.json({ error: 'Invalid event site.' }, { status: 400 });
     const ref = db.collection('events').doc(id);
     const current = await ref.get();
     if (!current.exists)
@@ -49,6 +52,7 @@ export async function PATCH(
         { status: 400 },
       );
     const allowed = [
+      'site',
       'title',
       'slug',
       'category',

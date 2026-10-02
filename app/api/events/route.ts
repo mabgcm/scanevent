@@ -1,3 +1,4 @@
+import { belongsToCurrentSite } from '@/lib/event-site';
 import { db } from '@/lib/firebase-admin';
 import { serializeDoc } from '@/lib/serializers';
 import type { EventRecord } from '@/lib/types';
@@ -10,6 +11,7 @@ export async function GET() {
     .where('status', 'in', ['published', 'sold_out'])
     .get();
   const events = snapshot.docs
+    .filter((doc) => belongsToCurrentSite(doc.data()))
     .map((doc) => serializeDoc(doc) as EventRecord)
     .sort((a, b) => a.date.localeCompare(b.date));
   return Response.json(

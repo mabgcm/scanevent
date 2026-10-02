@@ -1,3 +1,4 @@
+import { belongsToCurrentSite, currentSite } from '@/lib/event-site';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { randomBytes } from 'node:crypto';
 import { db } from '@/lib/firebase-admin';
@@ -20,7 +21,10 @@ export async function POST(request: Request) {
     const eventId = String(body.eventId || '');
     const quantity = Math.floor(Number(body.quantity || 1));
     if (!eventId || quantity < 1 || quantity > maxTicketsPerOrder()) {
-      return Response.json({ error: 'Invalid ticket quantity.' }, { status: 400 });
+      return Response.json(
+        { error: 'Invalid ticket quantity.' },
+        { status: 400 },
+      );
     }
 
     await releaseExpiredReservations(eventId);
@@ -34,6 +38,7 @@ export async function POST(request: Request) {
       const event = await transaction.get(eventRef);
       if (!event.exists) throw new Error('Event not found.');
       const data = event.data()!;
+      if (!belongsToCurrentSite(data)) throw new Error('Event not found.');
       if (data.status !== 'published')
         throw new Error('This event is not on sale.');
       const sold = Number(data.soldCount || 0);
@@ -46,6 +51,7 @@ export async function POST(request: Request) {
         updatedAt: FieldValue.serverTimestamp(),
       });
       transaction.set(reservationRef, {
+        site: currentSite,
         eventId,
         quantity,
         status: 'pending',
@@ -86,7 +92,12 @@ export async function POST(request: Request) {
       success_url: `${appUrl()}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl()}/?event=${eventId}&checkout=cancelled`,
       expires_at: Math.floor(expiresAt.toMillis() / 1000),
-      metadata: { eventId, reservationId, quantity: String(quantity) },
+      metadata: {
+        site: currentSite,
+        eventId,
+        reservationId,
+        quantity: String(quantity),
+      },
       automatic_tax: {
         enabled: process.env.STRIPE_AUTOMATIC_TAX_ENABLED === 'true',
       },
@@ -103,7 +114,10 @@ export async function POST(request: Request) {
       );
     return Response.json(
       {
-        error: error instanceof Error ? error.message : 'Checkout could not be started.',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Checkout could not be started.',
       },
       { status: 400 },
     );

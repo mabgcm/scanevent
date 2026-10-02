@@ -7,7 +7,10 @@ export type EventStatus =
   | 'completed'
   | 'archived';
 
+import type { EventSite } from './event-site';
+
 export type EventRecord = {
+  site?: EventSite;
   id: string;
   slug: string;
   title: string;

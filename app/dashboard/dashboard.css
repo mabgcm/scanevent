@@ -600,3 +600,6 @@
   .admin-empty { padding: 50px 20px; }
   .admin-loading { bottom: 14px; left: 14px; right: 14px; justify-content: center; }
 }
+
+.admin-site-filter { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; }
+.admin-site-filter select { border: 1px solid currentColor; border-radius: 8px; background: transparent; color: inherit; padding: 10px 12px; font: inherit; }

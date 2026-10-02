@@ -1,3 +1,4 @@
+import { belongsToCurrentSite } from '@/lib/event-site';
 import { db } from '@/lib/firebase-admin';
 import { serializeDoc } from '@/lib/serializers';
 
@@ -9,6 +10,7 @@ export async function GET(
   const snapshot = await db.collection('events').doc(id).get();
   if (
     !snapshot.exists ||
+    !belongsToCurrentSite(snapshot.data()) ||
     !['published', 'sold_out'].includes(snapshot.data()?.status)
   ) {
     return Response.json({ error: 'Event not found.' }, { status: 404 });
