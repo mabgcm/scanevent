@@ -26,6 +26,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { currentSite, eventSite } from '@/lib/event-site';
 import type { EventRecord, TicketRecord } from '@/lib/types';
 
 type Order = {
@@ -43,6 +44,7 @@ type EventDetail = {
   orders: Order[];
 };
 const blank = {
+  site: currentSite,
   title: '',
   slug: '',
   category: 'Singles & Social',
@@ -79,6 +81,10 @@ export default function DashboardClient({ email }: { email: string }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState('');
+  const [siteFilter, setSiteFilter] = useState<string>(currentSite);
+  const visibleEvents = events.filter(
+    (event) => siteFilter === 'all' || eventSite(event) === siteFilter,
+  );
 
   const loadEvents = useCallback(async () => {
     const response = await fetch('/api/admin/events', { cache: 'no-store' });
@@ -109,6 +115,7 @@ export default function DashboardClient({ email }: { email: string }) {
   function editEvent(event: EventRecord) {
     setEditingId(event.id);
     setForm({
+      site: eventSite(event) || currentSite,
       title: event.title,
       slug: event.slug,
       category: event.category,
@@ -156,6 +163,7 @@ export default function DashboardClient({ email }: { email: string }) {
     const payload = await response.json();
     setBusy(false);
     if (!response.ok) return setMessage(payload.error || 'Could not save.');
+    setSiteFilter(form.site);
     setForm(blank);
     setEditingId(null);
     setView('events');
@@ -299,14 +307,26 @@ export default function DashboardClient({ email }: { email: string }) {
         )}
         {view === 'events' && (
           <section className="admin-events">
-            {events.length === 0 ? (
+            <label className="admin-site-filter">
+              Website
+              <select
+                aria-label="Filter events by website"
+                value={siteFilter}
+                onChange={(event) => setSiteFilter(event.target.value)}
+              >
+                <option value="all">All websites</option>
+                <option value="scanevent">ScanEvent</option>
+                <option value="n8up">n8up</option>
+              </select>
+            </label>
+            {visibleEvents.length === 0 ? (
               <div className="admin-empty">
                 <CalendarDays />
                 <h2>No events yet</h2>
                 <p>Create and publish your first event.</p>
               </div>
             ) : (
-              events.map((event) => (
+              visibleEvents.map((event) => (
                 <article key={event.id}>
                   <div className="admin-event-image">
                     {event.imageUrl ? (
@@ -325,6 +345,7 @@ export default function DashboardClient({ email }: { email: string }) {
                     <span className={`admin-status ${event.status}`}>
                       {event.status}
                     </span>
+                    <p>{eventSite(event) === 'n8up' ? 'n8up' : 'ScanEvent'}</p>
                     <h2>{event.title}</h2>
                     <p>
                       {event.date} · {event.venue}
@@ -512,6 +533,13 @@ function EventForm({
   return (
     <form className="admin-form" onSubmit={save}>
       <div className="admin-form-grid">
+        <label>
+          Website
+          <select value={form.site} onChange={set('site')}>
+            <option value="scanevent">ScanEvent</option>
+            <option value="n8up">n8up</option>
+          </select>
+        </label>
         <label className="wide">
           Event name
           <input value={form.title} onChange={set('title')} required />
