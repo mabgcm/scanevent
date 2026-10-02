@@ -1,3 +1,4 @@
+import { belongsToCurrentSite, currentSite } from '@/lib/event-site';
 import { FieldValue } from 'firebase-admin/firestore';
 import type Stripe from 'stripe';
 import { db } from '@/lib/firebase-admin';
@@ -71,6 +72,7 @@ async function fulfill(
       updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.set(orderRef, {
+      site: currentSite,
       eventId,
       reservationId,
       quantity,
@@ -154,6 +156,7 @@ async function markRefunded(charge: Stripe.Charge, stripeEventId: string) {
   if (orders.empty) return;
   const orderRef = orders.docs[0].ref;
   const order = orders.docs[0].data();
+  if (!belongsToCurrentSite(order)) return;
   const tickets = await db
     .collection('tickets')
     .where('orderId', '==', orderRef.id)
@@ -210,6 +213,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Route each Checkout event to the site that created the reservation.
+    if (event.type.startsWith('checkout.session.')) {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const reservationId = session.metadata?.reservationId;
+      if (!reservationId) return Response.json({ received: true });
+      const reservation = await db
+        .collection('reservations')
+        .doc(reservationId)
+        .get();
+      if (!reservation.exists || !belongsToCurrentSite(reservation.data()))
+        return Response.json({ received: true });
+    }
     if (
       event.type === 'checkout.session.completed' &&
       event.data.object.payment_status === 'paid'
