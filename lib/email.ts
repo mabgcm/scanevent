@@ -56,6 +56,37 @@ export async function sendTicketEmail(input: TicketEmail) {
   if (error) throw new Error(`Resend: ${error.message}`);
 }
 
+type RefundEmail = {
+  orderId: string;
+  email: string;
+  name: string;
+  eventTitle: string;
+  eventDate: string;
+  amount: string;
+};
+
+export async function sendRefundEmail(input: RefundEmail) {
+  const { error } = await getResend().emails.send(
+    {
+      from: `N8UP Ticket Refund <${requireEnv('EMAIL_FROM')}>`,
+      to: input.email,
+      subject: `Important update about your ticket order — full refund on the way`,
+      html: `<div style="background:#f0efe9;padding:32px;font-family:Arial,sans-serif;color:#111">
+      <div style="max-width:580px;margin:auto"><h1 style="font-size:32px">A quick update on your ticket order.</h1>
+      <p>Hi ${escapeHtml(input.name)},</p>
+      <p>We're writing with an update about your ticket order for <strong>${escapeHtml(input.eventTitle)}</strong> on ${escapeHtml(input.eventDate)}.</p>
+      <p>Due to a technical error in our ticketing system, your order can't be honored as issued. We're very sorry about this.</p>
+      <p>You will receive a <strong>full refund of ${escapeHtml(input.amount)}</strong> to your original payment method <strong>within 15 days</strong>. You don't need to do anything — the refund will be processed automatically.</p>
+      <p>Thank you for your understanding.</p>
+      <p>N8UP Team</p>
+      <p style="color:#777;font-size:12px;margin-top:28px">This inbox is not monitored. Please do not reply to this email.</p></div>
+    </div>`,
+    },
+    { headers: { 'Idempotency-Key': `refund-${input.orderId}` } },
+  );
+  if (error) throw new Error(`Resend: ${error.message}`);
+}
+
 export async function sendAdminSetupEmail(email: string, link: string) {
   const { error } = await getResend().emails.send(
     {
